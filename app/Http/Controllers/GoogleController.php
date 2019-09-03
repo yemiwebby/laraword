@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Google;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class GoogleController extends Controller
 {
@@ -14,14 +15,16 @@ class GoogleController extends Controller
         $this->client = $google->client();
         $this->drive = $google->drive($this->client);
     }
+
     public function handlePost(Request $request)
     {
         global $image_url;
+
         if ($request->session()->get('access_token')){
-            $client=$this->client;
+            $client = $this->client;
             $client->setAccessToken($request->session()->get('access_token'));
 
-//getting document from drive that contain 'blog'
+            //getting document from drive that contain 'blog'
             $pageToken = NULL;
             $optParams = [
                 'q'=>"name contains 'blog'",
@@ -31,15 +34,15 @@ class GoogleController extends Controller
 
             ];
 
-            $respon = $this->drive->files->listFiles($optParams)->getFiles();
+            $googleDriveFiles = $this->drive->files->listFiles($optParams)->getFiles();
 
-            foreach ($respon as $respons) {
+            foreach ($googleDriveFiles as $googleDoc) {
 
                 //getting the content of the documents
 
                 $file = new \Google_Service_Docs($client);
 
-                $document = $respons['id'];
+                $document = $googleDoc['id'];
 
                 $doc = $file->documents->get($document);
 
@@ -75,56 +78,62 @@ class GoogleController extends Controller
                     }
                 }
 
-//connection to wordpress api
-                $username = 'admin';
-                $password = 'admin';
-                $client = new Client([
-                    'base_uri' => 'http://wordpress.local/wp-json/wp/v2/',
-                    'headers' => [
-                        'Authorization' => 'Basic ' . base64_encode($username . ':' . $password),
-                        'Accept' => 'application/json',
-                        'Content-type' => 'application/json',
-                        'Content-Disposition' => 'attachment',
-                    ]
+                DB::table('posts')->insert([
+                    'title' => $doc->getTitle(),
+                    'body' => implode("", $datas),
+                    'image' => $image_url
                 ]);
+
+                //connection to wordpress api
+//                $username = 'admin';
+//                $password = 'admin';
+//                $client = new Client([
+//                    'base_uri' => 'http://wordpress.local/wp-json/wp/v2/',
+//                    'headers' => [
+//                        'Authorization' => 'Basic ' . base64_encode($username . ':' . $password),
+//                        'Accept' => 'application/json',
+//                        'Content-type' => 'application/json',
+//                        'Content-Disposition' => 'attachment',
+//                    ]
+//                ]);
 
                 // uploading featured image to wordpress media and getting id
 
-                $name = $doc->getTitle() . '.' . 'jpg';
-                $responses = $client->post(
-                    'media',
-                    [
-                        'multipart' => [
-                            [
-                                'name' => 'file',
-                                'contents' => file_get_contents($image_url),
-                                'filename' => $name
-                            ],
+//                $name = $doc->getTitle() . '.' . 'jpg';
+//                $responses = $client->post(
+//                    'media',
+//                    [
+//                        'multipart' => [
+//                            [
+//                                'name' => 'file',
+//                                'contents' => file_get_contents($image_url),
+//                                'filename' => $name
+//                            ],
+//
+//                        ]
+//                    ]);
+//                $image_id_wp = json_decode($responses->getBody(), true);
 
-                        ]
-                    ]);
-                $image_id_wp = json_decode($responses->getBody(), true);
+                // uploading post to wordpress with featured image id
 
-// uploading post to wordpress with featured image id
-
-                $response = $client->post('posts', [
-                    'multipart' => [
-                        [
-                            'name' => 'title',
-                            'contents' => $doc->getTitle()
-                        ],
-                        [
-                            'name' => 'content',
-                            'contents' => implode("", $datas)
-                        ],
-
-                        [
-                            'name' => 'featured_media',
-                            'contents' => $image_id_wp['id']
-                        ],
-
-                    ]
-                ]);
+//                $response = $client->post('posts', [
+//                    'multipart' => [
+//                        [
+//                            'name' => 'title',
+//                            'contents' => $doc->getTitle()
+//                        ],
+//                        [
+//                            'name' => 'content',
+//                            'contents' => implode("", $datas)
+//                        ],
+//
+//                        [
+//                            'name' => 'featured_media',
+//                            'contents' => $image_id_wp['id']
+//                        ],
+//
+//                    ]
+//                ]);
 
             }
             return redirect('/home')->with('posted','Congratulations your post has been created');

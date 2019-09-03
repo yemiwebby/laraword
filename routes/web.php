@@ -19,6 +19,7 @@ Route::get('/', function () {
 Route::get('/login/google', 'AuthController@redirectToGoogleProvider');
 Route::get('/login/google/callback', 'AuthController@handleProviderGoogleCallback');
 Route::get('/post/blog', 'GoogleController@handlePost');
+Route::get('/post/wp/{id}', 'PostController@postToWp');
 
 Route::get('/homepage', 'AuthController@index')->name('homepage');
 Route::get('/home', 'AuthController@index')->name('home');

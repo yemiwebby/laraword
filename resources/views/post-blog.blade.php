@@ -3,7 +3,7 @@
 @section('content')
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-md-8">
+            <div class="col-md-12">
                 <div class="card">
                     <div class="card-header">Dashboard</div>
 
@@ -25,8 +25,30 @@
                                 {{ session('posted') }}
                             </div>
 
-                            You can now visit your wordpress site to publish your post
+                            You can now click on the title of any of the post below to upload to wordpress
                         @endif
+
+                            <div>
+                                @if(count($posts) > 0)
+                                    <div>
+                                        <h4>POSTS FROM DRIVE</h4>
+                                    </div>
+
+                                    <div class="row ">
+                                        <br>
+                                        @foreach($posts as $post)
+                                            <div class="col-md-4">
+                                                <div class="card" style="width: 18rem;">
+                                                    <div class="card-body">
+                                                        <h5 class="card-title"> <a href="{{ url('/post/wp',$post->id)}}">{{$post->title}}</a></h5>
+                                                        <p class="card-text"></p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
                     </div>
                 </div>
             </div>

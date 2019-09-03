@@ -3,21 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Google;
+use App\Post;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
 
-    public function index(){
-
-        return view('post-blog');
-
-    }
-
     public function __construct(Google $google, Request $request)
     {
         $this->client = $google->client();
         $this->drive = $google->drive($this->client);
+    }
+
+    public function index(){
+        $posts = Post::all();
+
+        return view('post-blog')->with('posts', $posts);
+
     }
 
     public function redirectToGoogleProvider(Google $googleDoc)
